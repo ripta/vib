@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"flag"
@@ -9,18 +8,13 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"time"
 
 	"github.com/containerd/console"
 	"github.com/moby/buildkit/client"
-	"github.com/moby/buildkit/client/buildid"
-	"github.com/moby/buildkit/frontend/gateway/grpcclient"
-	pb "github.com/moby/buildkit/frontend/gateway/pb"
 	"github.com/moby/buildkit/util/appcontext"
 	ui "github.com/moby/buildkit/util/progress/progressui"
 	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
-	"google.golang.org/grpc"
 )
 
 func exportAsImage(name string) []client.ExportEntry {
@@ -118,64 +112,4 @@ func progressDisplayer(ctx context.Context, phase string, ch chan *client.SolveS
 		}
 		return ui.DisplaySolveStatus(ctx, phase, cons, os.Stderr, ch)
 	}
-}
-
-func run2() error {
-	ctx, cancel := context.WithTimeout(appcontext.Context(), 2*time.Second)
-	defer cancel()
-
-	opts := []client.ClientOpt{
-		client.WithFailFast(),
-	}
-	c, err := client.New(ctx, "tcp://127.0.0.1:1234", opts...)
-	if err != nil {
-		return errors.Wrap(err, "client.New")
-	}
-
-	du, err := c.DiskUsage(ctx)
-	if err != nil {
-		return errors.Wrap(err, "client.DiskUsage")
-	}
-	fmt.Printf("disk usage returned %d usage info objects\n", len(du))
-
-	fs := client.WithFilter([]string{})
-	ws, err := c.ListWorkers(ctx, fs)
-	if err != nil {
-		return errors.Wrap(err, "client.ListWorkers")
-	}
-	for _, w := range ws {
-		var ps bytes.Buffer
-		for _, p := range w.Platforms {
-			ps.WriteString(p.Architecture + ",")
-		}
-		fmt.Printf("%20s\t%20s\n", w.ID, ps.String())
-	}
-
-	return nil
-}
-
-func run3() error {
-	// err := GraphTest()
-	// return errors.Wrap(err, "GraphTest")
-
-	// ctx := appcontext.Context()
-	// err := grpcclient.RunFromEnvironment(ctx, Builder)
-	// return errors.Wrap(err, "RunFromEnvironment")
-
-	ctx := buildid.AppendToOutgoingContext(appcontext.Context(), "cfdb77b4-d8ab-46d8-95a1-ad75d18514c8")
-	opts := []grpc.DialOption{
-		// grpc.WithDialer(...),
-		grpc.WithInsecure(),
-	}
-	conn, err := grpc.DialContext(ctx, "127.0.0.1:1234", opts...)
-	if err != nil {
-		return errors.Wrap(err, "grpc.DialContext")
-	}
-
-	client, err := grpcclient.New(ctx, nil, "", "", pb.NewLLBBridgeClient(conn), nil)
-	if err != nil {
-		return errors.Wrap(err, "grpcclient.New")
-	}
-
-	return errors.Wrap(client.Run(ctx, Builder), "Run")
 }
