@@ -1,0 +1,9 @@
+{
+    "flavor": "go",
+    "goSpec": {
+        "module": "github.com/ripta/spectacles",
+        "binaries": [
+            "./cmd/spectacles"
+        ]
+    }
+}
