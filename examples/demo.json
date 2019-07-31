@@ -1,5 +1,6 @@
 {
     "flavor": "go",
+    "repository": "https://github.com/ripta/spectacles",
     "goSpec": {
         "module": "github.com/ripta/spectacles",
         "binaries": [

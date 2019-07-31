@@ -23,16 +23,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-type Directive struct {
-	Flavor string      `json:"flavor"`
-	GoSpec GoDirective `json:"goSpec"`
-}
-
-type GoDirective struct {
-	Binaries []string `json:"binaries"`
-	Module   string   `json:"module,omitempty"`
-}
-
 func exportAsImage(name string) []client.ExportEntry {
 	return []client.ExportEntry{
 		{
@@ -93,20 +83,20 @@ func run(addr, filename, img string) error {
 		return errors.Wrap(err, "client.New")
 	}
 
-	// src := llb.Local("implicit-context")
-
 	solver := client.SolveOpt{
-		Exports:  exportAsImage(img),
-		Frontend: "gateway.v0",
-		FrontendAttrs: map[string]string{
-			"no-cache": "true",
-		},
+		Exports: exportAsImage(img),
 	}
 	progressCh := make(chan *client.SolveStatus)
 
 	gr, ctx := errgroup.WithContext(ctx)
 	gr.Go(func() error {
-		rsp, err := c.Build(ctx, solver, "vib", Builder, progressCh)
+		req, err := generateDefinition(drc)
+		if err != nil {
+			close(progressCh)
+			return errors.Wrap(err, "generateDefinition")
+		}
+
+		rsp, err := c.Solve(ctx, req, solver, progressCh)
 		if err != nil {
 			return errors.Wrap(err, "client.Build")
 		}
@@ -115,7 +105,7 @@ func run(addr, filename, img string) error {
 		}
 		return nil
 	})
-	gr.Go(progressDisplayer(ctx, "build", progressCh))
+	gr.Go(progressDisplayer(context.Background(), "build", progressCh))
 
 	return gr.Wait()
 }

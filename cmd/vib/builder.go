@@ -30,7 +30,6 @@ func GraphTest() error {
 
 // Builder generates an image.
 func Builder(ctx context.Context, c client.Client) (*client.Result, error) {
-	// builder := llb.Image("golang:1.12-stretch", llb.WithMetaResolver(c))
 	st := llb.Image("ubuntu:18.04")
 
 	def, err := st.Marshal(llb.LinuxAmd64)

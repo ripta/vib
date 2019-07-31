@@ -24,4 +24,4 @@ Compile vib from the root of this repository:
 
 and look at what buildkit workers are available to you:
 
-    ./vib --addr tcp://127.0.0.1:1234
+    ./vib --definition examples/demo.json --output docker.io/ripta/vib-demo:test --addr tcp://127.0.0.1:1234
